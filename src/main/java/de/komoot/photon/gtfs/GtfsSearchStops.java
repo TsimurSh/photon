@@ -94,20 +94,29 @@ public class GtfsSearchStops {
     }
 
     private static Set<PhotonResult> searchByName(PhotonRequest request) {
-        String[] query = request.getQuery().toLowerCase().split(" ");
-        for (String name : query) {
-            if (gtfsStops.getInGroups().get(name) == null) continue;
-            Set<PhotonResult> results = new HashSet<>(gtfsStops.getInGroups().get(name));
-            if (!results.isEmpty())
-                return results;
+        final String query = request.getQuery().toLowerCase();
+        String[] arreyOfQuery = query.split(" ");
+
+        if (gtfsStops.getInGroups().get(query) != null) {
+            Set<PhotonResult> firstTry = new HashSet<>(gtfsStops.getInGroups().get(query));
+            if (!firstTry.isEmpty())
+                return firstTry;
         }
-        for (String name : query) {
-            Set<PhotonResult> results = gtfsStops.getStops().stream()
+
+        Set<PhotonResult> secondTry = gtfsStops.getStops().stream()
+                .filter(stop -> stop.getFullStopName()
+                        .matches("(?i).*" + query + ".*"))
+                .collect(Collectors.toUnmodifiableSet());
+        if (!secondTry.isEmpty())
+            return secondTry;
+
+        for (String name : arreyOfQuery) {
+            Set<PhotonResult> lastChance = gtfsStops.getStops().stream()
                     .filter(stop -> stop.getFullStopName()
                             .matches("(?i).*" + name + ".*"))
                     .collect(Collectors.toUnmodifiableSet());
-            if (!results.isEmpty())
-                return results;
+            if (!lastChance.isEmpty())
+                return lastChance;
         }
         return Set.of();
     }
